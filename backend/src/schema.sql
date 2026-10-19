@@ -3,7 +3,8 @@ PRAGMA foreign_keys=ON;
 CREATE TABLE IF NOT EXISTS users (
  id INTEGER PRIMARY KEY, username TEXT NOT NULL UNIQUE COLLATE NOCASE,
  role TEXT NOT NULL CHECK(role IN ('owner','admin')), password_hash TEXT NOT NULL,
- must_change_password INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL
+ must_change_password INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL,
+ email TEXT COLLATE NOCASE
 );
 CREATE TABLE IF NOT EXISTS sessions (
  token_hash TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id),

@@ -214,12 +214,77 @@ fn username(value: &str) -> ApiResult<String> {
     Ok(result)
 }
 
+fn email_address(value: &str) -> ApiResult<Option<String>> {
+    let value = value.trim().to_ascii_lowercase();
+    if value.is_empty() {
+        return Ok(None);
+    }
+    let invalid = || {
+        bad(
+            "Enter a valid email address, such as name@example.com, or leave it blank to remove it.",
+        )
+    };
+    let (local, domain) = value.split_once('@').ok_or_else(invalid)?;
+    if value.len() > 254
+        || local.is_empty()
+        || local.len() > 64
+        || local.starts_with('.')
+        || local.ends_with('.')
+        || local.contains("..")
+        || !local
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b".!#$%&'*+-/=?^_`{|}~".contains(&b))
+        || !domain.contains('.')
+        || domain.split('.').any(|label| {
+            label.is_empty()
+                || label.len() > 63
+                || label.starts_with('-')
+                || label.ends_with('-')
+                || !label
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b == b'-')
+        })
+    {
+        return Err(invalid());
+    }
+    Ok(Some(value))
+}
+
+fn email_available(db: &Connection, email: &Option<String>, except_id: i64) -> ApiResult<()> {
+    let taken: bool = db.query_row(
+        "SELECT EXISTS(SELECT 1 FROM users WHERE email=?1 COLLATE NOCASE AND id!=?2)",
+        params![email, except_id],
+        |r| r.get(0),
+    )?;
+    if taken {
+        return Err(ApiError(
+            StatusCode::CONFLICT,
+            "email_taken",
+            "That email address is already associated with another account.",
+        ));
+    }
+    Ok(())
+}
+
 pub async fn initialize(config: Config) -> Result<Shared, Box<dyn std::error::Error>> {
     std::fs::create_dir_all(config.data_dir.join("uploads"))?;
     let mut db = Connection::open(config.data_dir.join("cocina.sqlite3"))?;
     db.busy_timeout(Duration::from_secs(5))?;
     db.execute_batch(include_str!("schema.sql"))?;
     let tx = db.transaction()?;
+    // Existing databases predate contact emails. Upgrade in place without
+    // recreating accounts, changing login names, or revoking active sessions.
+    let has_email = {
+        let mut columns = tx.prepare("PRAGMA table_info(users)")?;
+        let names = columns
+            .query_map([], |r| r.get::<_, String>(1))?
+            .collect::<Result<Vec<_>, _>>()?;
+        names.iter().any(|name| name == "email")
+    };
+    if !has_email {
+        tx.execute("ALTER TABLE users ADD COLUMN email TEXT COLLATE NOCASE", [])?;
+    }
+    tx.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_email ON users(email COLLATE NOCASE) WHERE email IS NOT NULL", [])?;
     let count: i64 = tx.query_row("SELECT COUNT(*) FROM users", [], |r| r.get(0))?;
     if count == 0 {
         let password = config.bootstrap_password.as_ref().ok_or("First startup requires BOOTSTRAP_PASSWORD or BOOTSTRAP_PASSWORD_FILE (12+ characters). No default password is provided.")?;
@@ -255,6 +320,7 @@ pub struct User {
     username: String,
     role: String,
     must_change_password: bool,
+    email: Option<String>,
 }
 fn user_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<User> {
     Ok(User {
@@ -262,6 +328,7 @@ fn user_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<User> {
         username: row.get(1)?,
         role: row.get(2)?,
         must_change_password: row.get(3)?,
+        email: row.get(4)?,
     })
 }
 struct Auth {
@@ -294,7 +361,7 @@ fn authenticate(
         return Err(unauth());
     }
     let session_hash = digest(token);
-    let result = db.query_row("SELECT u.id,u.username,u.role,u.must_change_password,s.csrf FROM sessions s JOIN users u ON s.user_id=u.id WHERE s.token_hash=?1 AND s.expires_at>?2", params![session_hash,now()], |row| Ok((user_row(row)?, row.get::<_,String>(4)?))).optional()?;
+    let result = db.query_row("SELECT u.id,u.username,u.role,u.must_change_password,u.email,s.csrf FROM sessions s JOIN users u ON s.user_id=u.id WHERE s.token_hash=?1 AND s.expires_at>?2", params![session_hash,now()], |row| Ok((user_row(row)?, row.get::<_,String>(5)?))).optional()?;
     let (user, csrf) = result.ok_or_else(unauth)?;
     if ready && user.must_change_password {
         return Err(ApiError(
@@ -387,7 +454,7 @@ async fn login(State(state): State<Shared>, Json(input): Json<Login>) -> ApiResu
                 ));
             }
         }
-        db.query_row("SELECT id,username,role,must_change_password,password_hash FROM users WHERE username=?1",[&name],|r| Ok((user_row(r)?,r.get::<_,String>(4)?))).optional()?
+        db.query_row("SELECT id,username,role,must_change_password,email,password_hash FROM users WHERE username=?1",[&name],|r| Ok((user_row(r)?,r.get::<_,String>(5)?))).optional()?
     };
     let hash = record
         .as_ref()
@@ -492,8 +559,9 @@ async fn users(State(state): State<Shared>, headers: HeaderMap) -> ApiResult<Jso
     let db = state.db.lock().map_err(internal)?;
     let auth = authenticate(&db, &headers, true, false)?;
     owner(&auth)?;
-    let mut stmt =
-        db.prepare("SELECT id,username,role,must_change_password FROM users ORDER BY username")?;
+    let mut stmt = db.prepare(
+        "SELECT id,username,role,must_change_password,email FROM users ORDER BY username",
+    )?;
     let users = stmt
         .query_map([], user_row)?
         .collect::<Result<Vec<_>, _>>()?;
@@ -504,6 +572,8 @@ struct NewUser {
     username: String,
     role: String,
     password: String,
+    #[serde(default)]
+    email: Option<String>,
 }
 async fn create_user(
     State(state): State<Shared>,
@@ -515,6 +585,7 @@ async fn create_user(
         owner(&authenticate(&db, &headers, true, true)?)?;
     }
     let name = username(&input.username)?;
+    let email = email_address(input.email.as_deref().unwrap_or(""))?;
     if !matches!(input.role.as_str(), "owner" | "admin") {
         return Err(bad("Choose an owner or admin role."));
     }
@@ -534,7 +605,8 @@ async fn create_user(
             "That login name is already in use.",
         ));
     }
-    tx.execute("INSERT INTO users(username,role,password_hash,must_change_password,created_at) VALUES(?1,?2,?3,1,?4)",params![name,input.role,hash,now()])?;
+    email_available(&tx, &email, 0)?;
+    tx.execute("INSERT INTO users(username,role,password_hash,must_change_password,created_at,email) VALUES(?1,?2,?3,1,?4,?5)",params![name,input.role,hash,now(),email])?;
     audit(&tx, auth.user.id, "user_created", &name)?;
     tx.commit()?;
     Ok((
@@ -544,6 +616,47 @@ async fn create_user(
         ),
     ))
 }
+
+#[derive(Deserialize)]
+struct EmailUpdate {
+    email: String,
+}
+async fn update_email(
+    State(state): State<Shared>,
+    headers: HeaderMap,
+    Path(id): Path<i64>,
+    Json(input): Json<EmailUpdate>,
+) -> ApiResult<Json<Value>> {
+    let mut db = state.db.lock().map_err(internal)?;
+    let tx = db.transaction()?;
+    let auth = authenticate(&tx, &headers, true, true)?;
+    owner(&auth)?;
+    let mut user = tx
+        .query_row(
+            "SELECT id,username,role,must_change_password,email FROM users WHERE id=?1",
+            [id],
+            user_row,
+        )
+        .optional()?
+        .ok_or(ApiError(
+            StatusCode::NOT_FOUND,
+            "not_found",
+            "This account no longer exists.",
+        ))?;
+    let email = email_address(&input.email)?;
+    email_available(&tx, &email, id)?;
+    tx.execute("UPDATE users SET email=?1 WHERE id=?2", params![email, id])?;
+    audit(&tx, auth.user.id, "email_updated", &id.to_string())?;
+    let message = if email.is_some() {
+        "Email address saved."
+    } else {
+        "Email address removed."
+    };
+    user.email = email;
+    tx.commit()?;
+    Ok(Json(json!({"user":user,"message":message})))
+}
+
 #[derive(Deserialize)]
 struct Reset {
     password: String,
@@ -850,6 +963,7 @@ pub fn app(state: Shared) -> Router {
         .route("/api/auth/logout", post(logout))
         .route("/api/auth/password", post(change_password))
         .route("/api/users", get(users).post(create_user))
+        .route("/api/users/{id}/email", axum::routing::put(update_email))
         .route("/api/users/{id}/password", post(reset_password))
         .route("/api/content", get(public_content).put(publish))
         .route(

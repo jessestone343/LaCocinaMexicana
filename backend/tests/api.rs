@@ -515,3 +515,234 @@ async fn dashboard_entrypoint_cookies_and_expired_sessions_work() {
             && cookie.contains("SameSite=Strict")
     );
 }
+
+#[tokio::test]
+async fn owners_can_edit_contact_emails_for_themselves_owners_and_admins() {
+    let (dir, mut owner) = setup().await;
+    owner_ready(&mut owner).await;
+    let original_cookie = owner.cookie.clone();
+    for role in ["owner", "admin"] {
+        assert_eq!(
+            owner
+                .request(
+                    "POST",
+                    "/api/users",
+                    json!({
+                        "username": role, "role": role, "password": INITIAL,
+                        "email": format!("{role}@example.com")
+                    })
+                )
+                .await
+                .0,
+            StatusCode::CREATED
+        );
+    }
+    let (_, accounts) = owner.request("GET", "/api/users", json!(null)).await;
+    for account in accounts["users"].as_array().unwrap() {
+        let id = account["id"].as_i64().unwrap();
+        let path = format!("/api/users/{id}/email");
+        let email = format!("updated-{id}@example.com");
+        let (status, result) = owner
+            .request(
+                "PUT",
+                &path,
+                json!({"email": format!("  UPDATED-{id}@Example.com  ")}),
+            )
+            .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(result["user"]["email"], email);
+        assert_eq!(result["user"]["username"], account["username"]);
+        assert_eq!(result["user"]["role"], account["role"]);
+        assert_eq!(
+            result["user"]["must_change_password"],
+            account["must_change_password"]
+        );
+        // Re-saving an account's own address does not conflict with itself.
+        assert_eq!(
+            owner.request("PUT", &path, json!({"email": email})).await.0,
+            StatusCode::OK
+        );
+    }
+    assert_eq!(owner.cookie, original_cookie);
+    let (_, session) = owner.request("GET", "/api/auth/me", json!(null)).await;
+    assert_eq!(session["user"]["email"], "updated-1@example.com");
+    let (_, session) = owner.login("jesse.stone.truecore.services", CHANGED).await;
+    assert_eq!(session["user"]["email"], "updated-1@example.com");
+    let (status, result) = owner
+        .request("PUT", "/api/users/1/email", json!({"email": "   "}))
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(result["user"]["email"].is_null());
+    let db = rusqlite::Connection::open(dir.path().join("cocina.sqlite3")).unwrap();
+    let count: i64 = db
+        .query_row(
+            "SELECT COUNT(*) FROM audit WHERE action='email_updated' AND actor_id=1 AND target='1'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(count, 3);
+}
+
+#[tokio::test]
+async fn email_changes_enforce_owner_access_csrf_validation_and_uniqueness() {
+    let (_dir, mut owner) = setup().await;
+    let path = "/api/users/1/email";
+    let body = json!({"email": "owner@example.com"});
+    assert_eq!(
+        owner.request("PUT", path, body.clone()).await.0,
+        StatusCode::UNAUTHORIZED
+    );
+    owner.login("jesse.stone.truecore.services", INITIAL).await;
+    assert_eq!(
+        owner.request("PUT", path, body.clone()).await.0,
+        StatusCode::FORBIDDEN
+    );
+    assert_eq!(owner.change(INITIAL, CHANGED).await.0, StatusCode::OK);
+    assert_eq!(owner.request("POST", "/api/users", json!({"username":"admin", "role":"admin", "password":INITIAL, "email":"admin@example.com"})).await.0, StatusCode::CREATED);
+    let mut admin = Client {
+        router: owner.router.clone(),
+        cookie: String::new(),
+        csrf: String::new(),
+    };
+    admin.login("admin", INITIAL).await;
+    admin.change(INITIAL, CHANGED).await;
+    for id in [1, 2] {
+        assert_eq!(
+            admin
+                .request("PUT", &format!("/api/users/{id}/email"), body.clone())
+                .await
+                .0,
+            StatusCode::FORBIDDEN
+        );
+    }
+    let csrf = std::mem::take(&mut owner.csrf);
+    assert_eq!(
+        owner.request("PUT", path, body.clone()).await.0,
+        StatusCode::FORBIDDEN
+    );
+    owner.csrf = csrf;
+    let request = Request::builder()
+        .method("PUT")
+        .uri(path)
+        .header("origin", "https://other.example.com")
+        .header("cookie", &owner.cookie)
+        .header("x-csrf-token", &owner.csrf)
+        .header("content-type", "application/json")
+        .body(Body::from(body.to_string()))
+        .unwrap();
+    assert_eq!(
+        owner
+            .router
+            .clone()
+            .oneshot(request)
+            .await
+            .unwrap()
+            .status(),
+        StatusCode::FORBIDDEN
+    );
+    for invalid in [
+        "invalid",
+        "no@domain",
+        "a..b@example.com",
+        "a@@example.com",
+        "@example.com",
+        "x@-example.com",
+        "x@a..com",
+        "x@exa mple.com",
+        "x\r\n@example.com",
+    ] {
+        assert_eq!(
+            owner.request("PUT", path, json!({"email":invalid})).await.0,
+            StatusCode::BAD_REQUEST,
+            "{invalid:?}"
+        );
+    }
+    assert_eq!(
+        owner
+            .request(
+                "PUT",
+                path,
+                json!({"email":format!("{}@example.com", "x".repeat(65))})
+            )
+            .await
+            .0,
+        StatusCode::BAD_REQUEST
+    );
+    let (status, error) = owner
+        .request("PUT", path, json!({"email":"ADMIN@EXAMPLE.COM"}))
+        .await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    assert_eq!(error["code"], "email_taken");
+    assert_eq!(
+        owner.request("PUT", "/api/users/99999/email", body).await.0,
+        StatusCode::NOT_FOUND
+    );
+    assert_eq!(owner.request("POST", "/api/users", json!({"username":"duplicate", "role":"owner", "password":INITIAL, "email":"ADMIN@EXAMPLE.COM"})).await.0, StatusCode::CONFLICT);
+    assert_eq!(owner.request("POST", "/api/users", json!({"username":"invalid", "role":"owner", "password":INITIAL, "email":"bad-email"})).await.0, StatusCode::BAD_REQUEST);
+    // An admin's existing session sees its changed email without being revoked.
+    assert_eq!(
+        owner
+            .request(
+                "PUT",
+                "/api/users/2/email",
+                json!({"email":"maria+team@example.com"})
+            )
+            .await
+            .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        admin.request("GET", "/api/auth/me", json!(null)).await.1["user"]["email"],
+        "maria+team@example.com"
+    );
+}
+
+#[tokio::test]
+async fn email_migration_preserves_existing_accounts_content_and_active_sessions() {
+    let (dir, mut owner) = setup().await;
+    owner_ready(&mut owner).await;
+    let (_, original_content) = owner.request("GET", "/api/content", json!(null)).await;
+    {
+        // Recreate the pre-email users table shape to exercise an actual upgrade.
+        let db = rusqlite::Connection::open(dir.path().join("cocina.sqlite3")).unwrap();
+        db.execute_batch("DROP INDEX users_email; ALTER TABLE users DROP COLUMN email;")
+            .unwrap();
+    }
+    let mut upgraded = config(&dir);
+    upgraded.bootstrap_password = None;
+    owner.router = app(initialize(upgraded.clone()).await.unwrap());
+    let (status, session) = owner.request("GET", "/api/auth/me", json!(null)).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(session["user"]["username"], "jesse.stone.truecore.services");
+    assert_eq!(session["user"]["must_change_password"], false);
+    assert!(session["user"]["email"].is_null());
+    assert_eq!(
+        owner.request("GET", "/api/content", json!(null)).await.1,
+        original_content
+    );
+    assert_eq!(
+        owner
+            .request(
+                "PUT",
+                "/api/users/1/email",
+                json!({"email":"jesse@example.com"})
+            )
+            .await
+            .0,
+        StatusCode::OK
+    );
+    // Repeated startup is safe and keeps the saved email and current session.
+    owner.router = app(initialize(upgraded).await.unwrap());
+    assert_eq!(
+        owner.request("GET", "/api/auth/me", json!(null)).await.1["user"]["email"],
+        "jesse@example.com"
+    );
+    assert_eq!(
+        owner
+            .login("jesse.stone.truecore.services", CHANGED)
+            .await
+            .0,
+        StatusCode::OK
+    );
+}

@@ -12,12 +12,22 @@ public site can remain on Vercel, including its existing Google reviews function
   gallery images. Existing menu prices, including multiple sizes, are preserved.
 - Edits update the menu preview immediately. The preview uses the **same renderer
   and menu stylesheet as the restaurant site**, with desktop/mobile views.
+  The dish list and edit panel sit side by side on desktop; the preview moves
+  below them on narrower desktop screens. On phones, selecting a dish brings
+  the edit panel into view automatically.
 - **Publish changes** makes the draft live atomically. The public site fetches
   the latest content on load and every 30 seconds while visible; no rebuild is
   needed. If the service is temporarily unavailable, an already open page keeps
   its last content; a new page falls back to the bundled original menu/gallery.
 - Only owners see Team & access. The backend independently restricts listing,
   creating, and resetting accounts to owners. New accounts can be owners or admins.
+- Owners can add, update, or remove the contact email for any owner/admin account
+  in Team & access, including their own. My account also provides the signed-in
+  owner's email editor. Email changes save immediately, with validation and
+  duplicate-address feedback; they do not change login names or passwords.
+  New accounts may include an optional contact email. Existing SQLite databases
+  upgrade automatically on startup and retain all accounts, sessions, and content.
+  Existing accounts initially have no contact email; an owner can add one.
 - Every new or reset account must replace its temporary password before using
   protected dashboard features. Owners can enter a temporary password for **any**
   owner/admin account, including their own. Resets revoke all of that account's
@@ -150,7 +160,8 @@ cargo fmt --manifest-path backend/Cargo.toml -- --check
 
 The API integration tests exercise mandatory password changes, role enforcement,
 resetting both account types/self, revoked sessions, CSRF/Origin checks, publish
-conflicts, validation, login throttling, persistence, and real image uploads.
+conflicts, validation, login throttling, persistence, real image uploads, owner-only
+email updates for all account types/self, and upgrades of existing databases.
 
 ## Development
 
