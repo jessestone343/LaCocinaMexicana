@@ -21,6 +21,12 @@ public site can remain on Vercel, including its existing Google reviews function
   its last content; a new page falls back to the bundled original menu/gallery.
 - Only owners see Team & access. The backend independently restricts listing,
   creating, and resetting accounts to owners. New accounts can be owners or admins.
+- Owners can edit the login name of any owner/admin account in Team & access,
+  including their own. My account also provides the signed-in owner's login name
+  editor. Names follow the existing 3–100 character rules and are unique without
+  regard to case. Saves take effect immediately; use the new name at the next
+  sign-in. Account IDs, passwords, roles, emails, active sessions, and unpublished
+  menu/gallery drafts are preserved. Admins ask an owner to change their name.
 - Owners can add, update, or remove the contact email for any owner/admin account
   in Team & access, including their own. My account also provides the signed-in
   owner's email editor. Email changes save immediately, with validation and
@@ -162,7 +168,8 @@ cargo fmt --manifest-path backend/Cargo.toml -- --check
 The API integration tests exercise mandatory password changes, role enforcement,
 resetting both account types/self, revoked sessions, CSRF/Origin checks, publish
 conflicts, validation, login throttling, persistence, real image uploads, owner-only
-email updates for all account types/self, and upgrades of existing databases.
+email and login name updates for all account types/self, preserved sessions and
+passwords after renaming, and upgrades of existing databases.
 
 ## Development
 

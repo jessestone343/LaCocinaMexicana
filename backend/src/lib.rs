@@ -470,15 +470,15 @@ async fn login(State(state): State<Shared>, Json(input): Json<Login>) -> ApiResu
     };
     let db = state.db.lock().map_err(internal)?;
     let unchanged: bool = db.query_row(
-        "SELECT EXISTS(SELECT 1 FROM users WHERE id=?1 AND password_hash=?2)",
-        params![user.id, hash],
+        "SELECT EXISTS(SELECT 1 FROM users WHERE id=?1 AND password_hash=?2 AND username=?3)",
+        params![user.id, hash, name],
         |r| r.get(0),
     )?;
     if !unchanged {
         return Err(ApiError(
             StatusCode::UNAUTHORIZED,
             "invalid_credentials",
-            "Your password changed. Please sign in again.",
+            "Your login details changed. Please sign in again.",
         ));
     }
     db.execute(
@@ -614,6 +614,62 @@ async fn create_user(
         Json(
             json!({"message":"Account created. They must change their temporary password at first sign-in."}),
         ),
+    ))
+}
+
+#[derive(Deserialize)]
+struct UsernameUpdate {
+    username: String,
+}
+async fn update_username(
+    State(state): State<Shared>,
+    headers: HeaderMap,
+    Path(id): Path<i64>,
+    Json(input): Json<UsernameUpdate>,
+) -> ApiResult<Json<Value>> {
+    let mut db = state.db.lock().map_err(internal)?;
+    let tx = db.transaction()?;
+    let auth = authenticate(&tx, &headers, true, true)?;
+    owner(&auth)?;
+    let mut user = tx
+        .query_row(
+            "SELECT id,username,role,must_change_password,email FROM users WHERE id=?1",
+            [id],
+            user_row,
+        )
+        .optional()?
+        .ok_or(ApiError(
+            StatusCode::NOT_FOUND,
+            "not_found",
+            "This account no longer exists.",
+        ))?;
+    let name = username(&input.username)?;
+    if tx.query_row(
+        "SELECT EXISTS(SELECT 1 FROM users WHERE username=?1 AND id<>?2)",
+        params![name, id],
+        |row| row.get::<_, bool>(0),
+    )? {
+        return Err(ApiError(
+            StatusCode::CONFLICT,
+            "username_taken",
+            "That login name is already in use.",
+        ));
+    }
+    if user.username != name {
+        tx.execute(
+            "UPDATE users SET username=?1 WHERE id=?2",
+            params![name, id],
+        )?;
+        tx.execute(
+            "DELETE FROM login_attempts WHERE key IN (?1,?2)",
+            params![format!("user:{}", user.username), format!("user:{name}")],
+        )?;
+        audit(&tx, auth.user.id, "username_updated", &id.to_string())?;
+        user.username = name;
+    }
+    tx.commit()?;
+    Ok(Json(
+        json!({"user":user,"message":"Login name saved. Use the new name the next time you sign in."}),
     ))
 }
 
@@ -963,6 +1019,10 @@ pub fn app(state: Shared) -> Router {
         .route("/api/auth/logout", post(logout))
         .route("/api/auth/password", post(change_password))
         .route("/api/users", get(users).post(create_user))
+        .route(
+            "/api/users/{id}/username",
+            axum::routing::put(update_username),
+        )
         .route("/api/users/{id}/email", axum::routing::put(update_email))
         .route("/api/users/{id}/password", post(reset_password))
         .route("/api/content", get(public_content).put(publish))

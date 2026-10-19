@@ -543,6 +543,252 @@ async fn dashboard_entrypoint_cookies_and_expired_sessions_work() {
 }
 
 #[tokio::test]
+async fn owners_can_rename_accounts_preserving_sessions_passwords_and_identity() {
+    let (dir, mut owner) = setup().await;
+    owner_ready(&mut owner).await;
+    for role in ["owner", "admin"] {
+        assert_eq!(
+            owner
+                .request(
+                    "POST",
+                    "/api/users",
+                    json!({"username":role,"role":role,"password":INITIAL,"email":format!("{role}@example.com")}),
+                )
+                .await
+                .0,
+            StatusCode::CREATED
+        );
+    }
+    let (_, accounts) = owner.request("GET", "/api/users", json!(null)).await;
+    let original_cookie = owner.cookie.clone();
+    let db = rusqlite::Connection::open(dir.path().join("cocina.sqlite3")).unwrap();
+    for account in accounts["users"].as_array().unwrap() {
+        let id = account["id"].as_i64().unwrap();
+        let old_name = account["username"].as_str().unwrap();
+        let password = if id == 1 { CHANGED } else { INITIAL };
+        let mut existing = Client {
+            router: owner.router.clone(),
+            cookie: String::new(),
+            csrf: String::new(),
+        };
+        assert_eq!(existing.login(old_name, password).await.0, StatusCode::OK);
+        for name in [old_name.to_string(), format!("renamed-{id}")] {
+            db.execute(
+                "INSERT INTO login_attempts(key,attempts,window_start) VALUES(?1,8,strftime('%s','now'))",
+                [format!("user:{name}")],
+            )
+            .unwrap();
+        }
+        let global_before: i64 = db
+            .query_row(
+                "SELECT attempts FROM login_attempts WHERE key='global'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        let path = format!("/api/users/{id}/username");
+        let (status, result) = owner
+            .request(
+                "PUT",
+                &path,
+                json!({"username":format!("  RENAMED-{id}  ")}),
+            )
+            .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(result["user"]["username"], format!("renamed-{id}"));
+        for field in ["id", "role", "email", "must_change_password"] {
+            assert_eq!(result["user"][field], account[field]);
+        }
+        assert!(!result.to_string().contains("password_hash"));
+        assert_eq!(owner.cookie, original_cookie);
+        let attempts: i64 = db
+            .query_row(
+                "SELECT COUNT(*) FROM login_attempts WHERE key IN (?1,?2)",
+                [format!("user:{old_name}"), format!("user:renamed-{id}")],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(attempts, 0);
+        assert_eq!(
+            db.query_row(
+                "SELECT attempts FROM login_attempts WHERE key='global'",
+                [],
+                |r| r.get::<_, i64>(0)
+            )
+            .unwrap(),
+            global_before
+        );
+        let (status, session) = existing.request("GET", "/api/auth/me", json!(null)).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(session["user"], result["user"]);
+        assert_eq!(
+            existing.login(old_name, password).await.0,
+            StatusCode::UNAUTHORIZED
+        );
+        assert_eq!(
+            existing.login(&format!("renamed-{id}"), password).await.0,
+            StatusCode::OK
+        );
+        // Normalized retries of the same name are allowed without another rename.
+        assert_eq!(
+            owner
+                .request("PUT", &path, json!({"username":format!("RENAMED-{id}")}))
+                .await
+                .0,
+            StatusCode::OK
+        );
+    }
+    assert_eq!(
+        owner.request("GET", "/api/users", json!(null)).await.0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        owner.request("GET", "/api/auth/me", json!(null)).await.1["user"]["username"],
+        "renamed-1"
+    );
+    let count: i64 = db
+        .query_row(
+            "SELECT COUNT(*) FROM audit WHERE action='username_updated' AND actor_id=1",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(count, 3);
+    // Startup retains the renamed owner instead of recreating the bootstrap name.
+    let restarted = app(initialize(config(&dir)).await.unwrap());
+    let mut after_restart = Client {
+        router: restarted,
+        cookie: original_cookie,
+        csrf: owner.csrf.clone(),
+    };
+    let (status, session) = after_restart
+        .request("GET", "/api/auth/me", json!(null))
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(session["user"]["username"], "renamed-1");
+    assert_eq!(
+        after_restart
+            .request("GET", "/api/users", json!(null))
+            .await
+            .1["users"]
+            .as_array()
+            .unwrap()
+            .len(),
+        3
+    );
+}
+
+#[tokio::test]
+async fn username_changes_enforce_owner_access_validation_and_uniqueness() {
+    let (_dir, mut owner) = setup().await;
+    let path = "/api/users/1/username";
+    let body = json!({"username":"new.owner"});
+    assert_eq!(
+        owner.request("PUT", path, body.clone()).await.0,
+        StatusCode::UNAUTHORIZED
+    );
+    owner.login("jesse.stone.truecore.services", INITIAL).await;
+    assert_eq!(
+        owner.request("PUT", path, body.clone()).await.0,
+        StatusCode::FORBIDDEN
+    );
+    owner.change(INITIAL, CHANGED).await;
+    assert_eq!(
+        owner
+            .request(
+                "POST",
+                "/api/users",
+                json!({"username":"admin", "role":"admin", "password":INITIAL})
+            )
+            .await
+            .0,
+        StatusCode::CREATED
+    );
+    let mut admin = Client {
+        router: owner.router.clone(),
+        cookie: String::new(),
+        csrf: String::new(),
+    };
+    admin.login("admin", INITIAL).await;
+    admin.change(INITIAL, CHANGED).await;
+    for id in [1, 2] {
+        assert_eq!(
+            admin
+                .request("PUT", &format!("/api/users/{id}/username"), body.clone())
+                .await
+                .0,
+            StatusCode::FORBIDDEN
+        );
+    }
+    let csrf = std::mem::take(&mut owner.csrf);
+    assert_eq!(
+        owner.request("PUT", path, body.clone()).await.0,
+        StatusCode::FORBIDDEN
+    );
+    owner.csrf = csrf;
+    let response = owner
+        .router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("PUT")
+                .uri(path)
+                .header("origin", "https://other.example.com")
+                .header("cookie", &owner.cookie)
+                .header("x-csrf-token", &owner.csrf)
+                .header("content-type", "application/json")
+                .body(Body::from(body.to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    for invalid in [
+        "",
+        "ab",
+        "with spaces",
+        "a/b",
+        "<script>",
+        "mariá",
+        &"a".repeat(101),
+    ] {
+        assert_eq!(
+            owner
+                .request("PUT", path, json!({"username":invalid}))
+                .await
+                .0,
+            StatusCode::BAD_REQUEST,
+            "{invalid:?}"
+        );
+    }
+    let (status, error) = owner
+        .request("PUT", path, json!({"username":"  ADMIN  "}))
+        .await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    assert_eq!(error["code"], "username_taken");
+    assert_eq!(
+        owner
+            .request("PUT", "/api/users/99999/username", body)
+            .await
+            .0,
+        StatusCode::NOT_FOUND
+    );
+    assert_eq!(
+        owner.request("GET", "/api/auth/me", json!(null)).await.1["user"]["username"],
+        "jesse.stone.truecore.services"
+    );
+    assert_eq!(
+        admin.request("GET", "/api/auth/me", json!(null)).await.1["user"]["username"],
+        "admin"
+    );
+    // A boundary-length name with every permitted punctuation mark remains valid.
+    let valid = format!("{}._@+-", "a".repeat(95));
+    let (status, result) = owner.request("PUT", path, json!({"username":valid})).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(result["user"]["username"], valid);
+}
+
+#[tokio::test]
 async fn owners_can_edit_contact_emails_for_themselves_owners_and_admins() {
     let (dir, mut owner) = setup().await;
     owner_ready(&mut owner).await;

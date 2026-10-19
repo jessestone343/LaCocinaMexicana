@@ -9,11 +9,15 @@ const clone = (data) => structuredClone(data);
 const options = (selected, all = false) => `${all ? '<option value="">All categories</option>' : ''}${CATEGORIES.map((c) => `<option ${c === selected ? 'selected' : ''}>${e(c)}</option>`).join('')}`;
 const passwordField = (name, label, autocomplete = 'new-password', hint = true) => `<label>${label}<div class="password-control"><input type="password" name="${name}" autocomplete="${autocomplete}" required minlength="${autocomplete === 'current-password' ? 1 : 12}" maxlength="256"><button type="button" class="secondary" data-toggle-password="${name}" aria-label="Show ${label.toLowerCase()}">Show</button></div>${hint ? '<small class="password-hint">At least 12 characters. A long, unique passphrase works well.</small>' : ''}</label>`;
 
-function emailForm(user) {
-  return `<form data-email-user="${user.id}"><label>Contact email (optional)<input type="email" name="email" value="${e(user.email || '')}" maxlength="254" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="name@example.com"></label><p class="password-hint">Save to update this account immediately. Leave blank to remove the email. The login name stays the same.</p><div class="form-error" role="alert"></div><div class="form-success" role="status"></div><button type="submit" class="secondary" disabled>Save email</button></form>`;
+function accountForm(user, field) {
+  const loginName = field === 'username';
+  const label = loginName ? 'Login name' : 'Contact email (optional)';
+  const attributes = loginName ? 'type="text" required minlength="3" maxlength="100" autocomplete="off"' : 'type="email" maxlength="254" autocomplete="email" placeholder="name@example.com"';
+  const hint = loginName ? 'Save to update this login name immediately. Use the new name next time you sign in. Passwords and active sessions stay the same.' : 'Save to update this account immediately. Leave blank to remove the email. The login name stays the same.';
+  return `<form data-account-user="${user.id}" data-account-field="${field}"><label>${label}<input ${attributes} name="${field}" value="${e(user[field] || '')}" autocapitalize="none" spellcheck="false"></label><p class="password-hint">${hint}</p><div class="form-error" role="alert"></div><div class="form-success" role="status"></div><button type="submit" class="secondary" disabled>${loginName ? 'Save login name' : 'Save email'}</button></form>`;
 }
-const emailChanges = () => [...app.querySelectorAll('[data-email-user] input[name="email"]')].some((input) => input.value.trim().toLowerCase() !== input.defaultValue);
-const emailSaving = () => !!app.querySelector('[data-email-user][data-busy]');
+const accountChanges = () => [...app.querySelectorAll('[data-account-user] input')].some((input) => input.value.trim().toLowerCase() !== input.defaultValue);
+const accountSaving = () => !!app.querySelector('[data-account-user][data-busy]');
 
 function notify(message, error = false) {
   const toast = document.createElement('div'); toast.className = `toast${error ? ' error' : ''}`;
@@ -38,7 +42,7 @@ async function request(path, { method = 'GET', body } = {}) {
   catch { throw new Error('Could not reach the server. Check your connection and try again. Your draft remains in this tab.'); }
   const data = await response.json().catch(() => ({ message: 'The server returned an unexpected response. Please try again.' }));
   if (!response.ok) {
-    if (response.status === 401 && path !== '/auth/login') { state.previousUsername = state.user?.username; state.user = null; renderAuth('Please sign in again. Your draft will remain in this tab.'); }
+    if (response.status === 401 && path !== '/auth/login') { state.previousUserId = state.user?.id ?? state.previousUserId; state.user = null; renderAuth('Please sign in again. Your draft will remain in this tab.'); }
     if (data.code === 'password_change_required' && state.user) { state.user.must_change_password = true; renderAuth(data.message); }
     const error = new Error(data.message || 'This action could not be completed.'); error.code = data.code; throw error;
   }
@@ -67,7 +71,7 @@ function renderPage() {
     workspace.innerHTML = `${heading('Good food takes a team', 'The right people. The right access.', 'Owners manage accounts. Owners and admins can keep the menu and gallery up to date.')}<div class="user-layout"><section class="panel"><div class="panel-header"><h2>Your team</h2><button class="quiet" data-action="refresh-users">Refresh</button></div><div id="user-list"><p class="empty-state">Loading accounts…</p></div></section><section class="panel"><div class="panel-header"><h2>Add a new user</h2><span class="role-pill">Owners only</span></div><form id="create-user" class="panel-body"><label>Login name<input name="username" required minlength="3" maxlength="100" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. maria.cocina"></label><label>Contact email (optional)<input type="email" name="email" maxlength="254" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="name@example.com"></label><label>Role<select name="role"><option value="admin">Admin — edit menu & gallery</option><option value="owner">Owner — edit content & manage all accounts</option></select></label>${passwordField('password', 'Temporary password')}<p class="notice">Share this temporary password directly with the user. They must choose a new password before they can use the dashboard.</p><div class="form-error" role="alert"></div><button type="submit">Create account</button></form></section></div>`;
     loadUsers();
   } else {
-    workspace.innerHTML = `${heading('A little housekeeping', 'Keep your account secure.', `Signed in as ${e(state.user.username)} · ${e(state.user.role)}`)}<section class="panel account-panel"><div class="panel-header"><h2>Your email address</h2></div><div class="panel-body">${state.user.role === 'owner' ? emailForm(state.user) : `<p class="user-email">${state.user.email ? e(state.user.email) : 'No email address set'}</p><p class="password-hint">An owner can update the email associated with your account.</p>`}</div></section><section class="panel account-panel"><div class="panel-header"><h2>Change your password</h2></div><form id="change-password" class="panel-body">${passwordField('current_password', 'Current password', 'current-password', false)}${passwordField('new_password', 'New password')}${passwordField('confirm_password', 'Confirm new password', 'new-password', false)}<p class="notice">Changing your password signs out your other sessions.</p><div class="form-error" role="alert"></div><button type="submit">Update password</button></form></section>`;
+    workspace.innerHTML = `${heading('A little housekeeping', 'Keep your account secure.', `<span id="account-identity">Signed in as ${e(state.user.username)} · ${e(state.user.role)}</span>`)}<section class="panel account-panel"><div class="panel-header"><h2>Your login name</h2></div><div class="panel-body">${state.user.role === 'owner' ? accountForm(state.user, 'username') : `<p class="user-email">${e(state.user.username)}</p><p class="password-hint">An owner can update your login name.</p>`}</div></section><section class="panel account-panel"><div class="panel-header"><h2>Your email address</h2></div><div class="panel-body">${state.user.role === 'owner' ? accountForm(state.user, 'email') : `<p class="user-email">${state.user.email ? e(state.user.email) : 'No email address set'}</p><p class="password-hint">An owner can update the email associated with your account.</p>`}</div></section><section class="panel account-panel"><div class="panel-header"><h2>Change your password</h2></div><form id="change-password" class="panel-body">${passwordField('current_password', 'Current password', 'current-password', false)}${passwordField('new_password', 'New password')}${passwordField('confirm_password', 'Confirm new password', 'new-password', false)}<p class="notice">Changing your password signs out your other sessions.</p><div class="form-error" role="alert"></div><button type="submit">Update password</button></form></section>`;
   }
   renderConflict();
 }
@@ -116,12 +120,12 @@ async function loadUsers() {
   try {
     const data = await request('/users'); state.users = data.users;
     const list = app.querySelector('#user-list'); if (!list) return;
-    list.innerHTML = data.users.map((user) => `<article class="user-card"><div class="user-card-head"><strong>${e(user.username)}${user.id === state.user.id ? ' (you)' : ''}</strong><span class="role-pill">${e(user.role)}</span></div><p class="user-email">${user.email ? e(user.email) : 'No email address set'}</p><details><summary>Edit email</summary>${emailForm(user)}</details><p>${user.must_change_password ? '◷ Password setup required at next sign-in' : '✓ Account ready'}</p><details><summary>Reset password</summary><form data-reset-user="${user.id}">${passwordField(`reset_${user.id}`, 'New temporary password')}<small>All sessions will end immediately. This user must change the password at next sign-in.${user.id === state.user.id ? ' Resetting your own password signs you out.' : ''}</small><div class="form-error" role="alert"></div><button type="submit" class="secondary">Reset password</button></form></details></article>`).join('');
+    list.innerHTML = data.users.map((user) => `<article class="user-card"><div class="user-card-head"><strong>${e(user.username)}${user.id === state.user.id ? ' (you)' : ''}</strong><span class="role-pill">${e(user.role)}</span></div><p class="user-email">${user.email ? e(user.email) : 'No email address set'}</p><details><summary>Edit login name</summary>${accountForm(user, 'username')}</details><details><summary>Edit email</summary>${accountForm(user, 'email')}</details><p>${user.must_change_password ? '◷ Password setup required at next sign-in' : '✓ Account ready'}</p><details><summary>Reset password</summary><form data-reset-user="${user.id}">${passwordField(`reset_${user.id}`, 'New temporary password')}<small>All sessions will end immediately. This user must change the password at next sign-in.${user.id === state.user.id ? ' Resetting your own password signs you out.' : ''}</small><div class="form-error" role="alert"></div><button type="submit" class="secondary">Reset password</button></form></details></article>`).join('');
   } catch (error) { const list = app.querySelector('#user-list'); if (list) list.innerHTML = `<div class="panel-body"><p class="form-error" role="alert">${e(error.message)}</p><button data-action="refresh-users">Try again</button></div>`; }
 }
 function acceptSession(data) {
-  if ((state.previousUsername || state.user?.username) !== data.user.username) { state.content = null; state.baseline = ''; state.conflict = false; state.selected = null; state.page = 'menu'; }
-  state.user = data.user; state.previousUsername = data.user.username; state.csrf = data.csrf_token;
+  if ((state.previousUserId ?? state.user?.id) !== data.user.id) { state.content = null; state.baseline = ''; state.conflict = false; state.selected = null; state.page = 'menu'; }
+  state.user = data.user; state.previousUserId = data.user.id; state.csrf = data.csrf_token;
 }
 async function afterSignIn(data) {
   acceptSession(data);
@@ -155,7 +159,7 @@ async function uploadPhoto(file, replaceId) {
     const result = await new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest(); xhr.open('POST', '/api/uploads'); xhr.setRequestHeader('X-CSRF-Token', state.csrf); xhr.timeout = 90000;
       xhr.upload.onprogress = (event) => { if (event.lengthComputable && progress) { progress.value = event.loaded / event.total * 100; if (status) status.textContent = progress.value === 100 ? 'Optimizing your photo…' : `Uploading… ${Math.round(progress.value)}%`; } };
-      xhr.onload = () => { let result; try { result = JSON.parse(xhr.responseText); } catch { reject(new Error('Upload failed. Please try again.')); return; } if (xhr.status >= 200 && xhr.status < 300) resolve(result); else { if (xhr.status === 401) { state.previousUsername = state.user?.username; state.user = null; renderAuth('Your session ended. Sign in again to continue. Your draft stays in this tab.'); } reject(new Error(result.message || 'Upload failed. Please try again.')); } };
+      xhr.onload = () => { let result; try { result = JSON.parse(xhr.responseText); } catch { reject(new Error('Upload failed. Please try again.')); return; } if (xhr.status >= 200 && xhr.status < 300) resolve(result); else { if (xhr.status === 401) { state.previousUserId = state.user?.id ?? state.previousUserId; state.user = null; renderAuth('Your session ended. Sign in again to continue. Your draft stays in this tab.'); } reject(new Error(result.message || 'Upload failed. Please try again.')); } };
       xhr.onerror = xhr.ontimeout = () => reject(new Error('Upload interrupted. Check your connection and try again.'));
       const form = new FormData(); form.append('file', file); xhr.send(form);
     });
@@ -169,10 +173,10 @@ async function uploadPhoto(file, replaceId) {
 
 app.addEventListener('input', (event) => {
   const target = event.target;
-  const emailFormElement = target.closest('[data-email-user]');
-  if (emailFormElement && target.name === 'email') {
-    emailFormElement.querySelector('.form-success').textContent = '';
-    emailFormElement.querySelector('[type=submit]').disabled = !!emailFormElement.dataset.busy || target.value.trim().toLowerCase() === target.defaultValue;
+  const accountFormElement = target.closest('[data-account-user]');
+  if (accountFormElement && target.name === accountFormElement.dataset.accountField) {
+    accountFormElement.querySelector('.form-success').textContent = '';
+    accountFormElement.querySelector('[type=submit]').disabled = !!accountFormElement.dataset.busy || target.value.trim().toLowerCase() === target.defaultValue;
   }
   if (target.id === 'menu-search') { state.search = target.value; renderList(); }
   if (target.id === 'category-filter') { state.category = target.value; renderList(); }
@@ -188,7 +192,7 @@ app.addEventListener('change', (event) => {
 app.addEventListener('click', async (event) => {
   const button = event.target.closest('button'); if (!button || button.disabled) return;
   if (button.dataset.togglePassword) { const input = button.closest('form').elements[button.dataset.togglePassword]; const show = input.type === 'password'; input.type = show ? 'text' : 'password'; button.textContent = show ? 'Hide' : 'Show'; button.setAttribute('aria-label', `${show ? 'Hide' : 'Show'} password`); return; }
-  if (button.dataset.page) { if (state.saving || state.uploading || emailSaving()) { notify('Please wait for the current action to finish.'); return; } if (emailChanges() && !await confirmAction('Leave unsaved email edits?', 'Save the email first to keep it, or discard these email edits to continue.', 'Discard email edits')) return; state.page = button.dataset.page; renderShell(); return; }
+  if (button.dataset.page) { if (state.saving || state.uploading || accountSaving()) { notify('Please wait for the current action to finish.'); return; } if (accountChanges() && !await confirmAction('Leave unsaved account edits?', 'Save the account edits first to keep them, or discard them to continue.', 'Discard account edits')) return; state.page = button.dataset.page; renderShell(); return; }
   if (button.dataset.selectItem) { state.selected = button.dataset.selectItem; renderList(); renderItemEditor(); focusPreview(); if (matchMedia('(max-width: 640px)').matches) app.querySelector('.dish-editor-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
   if (button.dataset.view) { state.mobile = button.dataset.view === 'mobile'; app.querySelector('#preview-page').classList.toggle('mobile', state.mobile); app.querySelectorAll('[data-view]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.view === button.dataset.view)); return; }
   const action = button.dataset.action;
@@ -198,17 +202,19 @@ app.addEventListener('click', async (event) => {
     if (action === 'remove-item') { const item = state.content.menu_items.find((i) => i.id === state.selected); if (item && await confirmAction('Remove this dish?', `${item.name} will be removed from your draft. Customers will see the change after you publish.`, 'Remove dish')) { state.content.menu_items = state.content.menu_items.filter((i) => i.id !== item.id); state.selected = null; renderPage(); updateSaveState(); notify('Dish removed from draft. Publish when you are ready.'); } }
     if (action === 'discard' || action === 'reload-content') { if (await confirmAction('Reload published content?', 'Your unpublished menu and gallery edits will be discarded.', 'Reload published version')) { const data = await request('/content'); state.content = data; state.baseline = JSON.stringify(data); state.conflict = false; renderPage(); updateSaveState(); notify('Published content reloaded.'); } }
     if (action === 'download-draft') { const url = URL.createObjectURL(new Blob([JSON.stringify(state.content, null, 2)], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = 'la-cocina-menu-draft.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
-    if (action === 'refresh-users') { if (emailSaving()) { notify('Please wait for the email save to finish.'); return; } if (emailChanges() && !await confirmAction('Refresh with unsaved email edits?', 'Refreshing will discard email edits you have not saved.', 'Discard & refresh')) return; await loadUsers(); }
+    if (action === 'refresh-users') { if (accountSaving()) { notify('Please wait for the account save to finish.'); return; } if (accountChanges() && !await confirmAction('Refresh with unsaved account edits?', 'Refreshing will discard account edits you have not saved.', 'Discard & refresh')) return; await loadUsers(); }
     if (action === 'retry-workspace') await loadWorkspace();
     if (action === 'choose-photo' || button.dataset.replacePhoto) { const input = app.querySelector('#photo-file'); input.dataset.replaceId = button.dataset.replacePhoto || ''; input.click(); }
     if (button.dataset.movePhoto) { const index = state.content.gallery.findIndex((p) => p.id === button.dataset.movePhoto); const to = index + Number(button.dataset.direction); [state.content.gallery[index], state.content.gallery[to]] = [state.content.gallery[to], state.content.gallery[index]]; renderPage(); updateSaveState(); document.querySelector('#announcer').textContent = `Photo moved to position ${to + 1}.`; }
     if (button.dataset.removePhoto && await confirmAction('Remove this photo?', 'It will leave your draft gallery. Publish to update the website.', 'Remove photo')) { state.content.gallery = state.content.gallery.filter((p) => p.id !== button.dataset.removePhoto); renderPage(); updateSaveState(); notify('Photo removed from draft.'); }
-    if (action === 'logout') { if (state.uploading || state.saving || emailSaving()) { notify('Please wait for the current action to finish.'); return; } if ((dirty() || emailChanges()) && !await confirmAction('Sign out with unsaved edits?', 'Your unpublished content and unsaved email edits will be discarded when you sign out.', 'Discard & sign out')) return; await request('/auth/logout', { method: 'POST' }); state.user = null; state.content = null; state.baseline = ''; state.csrf = ''; renderAuth(); notify('You have been signed out.'); }
+    if (action === 'logout') { if (state.uploading || state.saving || accountSaving()) { notify('Please wait for the current action to finish.'); return; } if ((dirty() || accountChanges()) && !await confirmAction('Sign out with unsaved edits?', 'Your unpublished content and unsaved account edits will be discarded when you sign out.', 'Discard & sign out')) return; await request('/auth/logout', { method: 'POST' }); state.user = null; state.content = null; state.baseline = ''; state.csrf = ''; renderAuth(); notify('You have been signed out.'); }
   } catch (error) { notify(error.message, true); }
 });
 app.addEventListener('submit', async (event) => {
   event.preventDefault(); const form = event.target; if (form.id === 'item-form') return;
   if (form.dataset.busy) return;
+  if (accountSaving()) { notify('Please wait for the account save to finish.'); return; }
+  if ((form.id === 'create-user' || form.dataset.resetUser) && accountChanges() && !await confirmAction('Continue with unsaved account edits?', 'This action will refresh the team list and discard account edits you have not saved.', 'Discard & continue')) return;
   const fields = Object.fromEntries(new FormData(form)); const errorBox = form.querySelector('.form-error'); if (errorBox) errorBox.textContent = '';
   if ('confirm_password' in fields && fields.new_password !== fields.confirm_password) { errorBox.textContent = 'The new passwords do not match.'; form.elements.confirm_password.focus(); return; }
   if (form.dataset.resetUser) {
@@ -216,16 +222,24 @@ app.addEventListener('submit', async (event) => {
     if (!await confirmAction(`Reset ${target.username}'s password?`, 'This will end all their sessions and require them to choose a new password at their next sign-in.', 'Reset password')) return;
   }
   const submit = form.querySelector('[type=submit]'); const original = submit.textContent; submit.disabled = true; submit.textContent = 'Please wait…'; form.dataset.busy = 'true';
-  if (form.dataset.emailUser) { form.elements.email.disabled = true; form.querySelector('.form-success').textContent = ''; }
+  if (form.dataset.accountUser) { form.elements[form.dataset.accountField].disabled = true; form.querySelector('.form-success').textContent = ''; }
   try {
     if (form.id === 'login') { const data = await request('/auth/login', { method: 'POST', body: fields }); form.reset(); await afterSignIn(data); }
     else if (form.id === 'first-password' || form.id === 'change-password') { const first = form.id === 'first-password'; const data = await request('/auth/password', { method: 'POST', body: fields }); acceptSession(data); form.reset(); if (first) await afterSignIn(data); notify('Your password has been updated. You are ready to go.'); }
     else if (form.id === 'create-user') { const data = await request('/users', { method: 'POST', body: fields }); form.reset(); await loadUsers(); notify(data.message); }
-    else if (form.dataset.emailUser) {
-      const data = await request(`/users/${form.dataset.emailUser}/email`, { method: 'PUT', body: { email: fields.email } });
-      if (data.user.id === state.user.id) state.user = data.user;
+    else if (form.dataset.accountUser) {
+      const field = form.dataset.accountField;
+      const data = await request(`/users/${form.dataset.accountUser}/${field}`, { method: 'PUT', body: { [field]: fields[field] } });
+      if (data.user.id === state.user.id) {
+        state.user = data.user;
+        state.previousUserId = data.user.id;
+        const accountName = app.querySelector('.account-name'); if (accountName) accountName.textContent = data.user.username;
+        const accountIdentity = app.querySelector('#account-identity'); if (accountIdentity) accountIdentity.textContent = `Signed in as ${data.user.username} · ${data.user.role}`;
+      }
       state.users = state.users.map((user) => user.id === data.user.id ? data.user : user);
-      form.elements.email.value = form.elements.email.defaultValue = data.user.email || '';
+      form.elements[field].value = form.elements[field].defaultValue = data.user[field] || '';
+      const currentName = form.closest('.user-card')?.querySelector('.user-card-head strong');
+      if (currentName) currentName.textContent = `${data.user.username}${data.user.id === state.user.id ? ' (you)' : ''}`;
       const currentEmail = form.closest('.user-card')?.querySelector('.user-email');
       if (currentEmail) currentEmail.textContent = data.user.email || 'No email address set';
       form.querySelector('.form-success').textContent = data.message;
@@ -233,9 +247,9 @@ app.addEventListener('submit', async (event) => {
     }
     else if (form.dataset.resetUser) { const data = await request(`/users/${form.dataset.resetUser}/password`, { method: 'POST', body: { password: fields[`reset_${form.dataset.resetUser}`] } }); form.reset(); if (Number(form.dataset.resetUser) === state.user.id) { state.user = null; state.csrf = ''; renderAuth('Your password was reset. Sign in with the temporary password you just entered.'); } else await loadUsers(); notify(data.message); }
   } catch (error) { if (form.isConnected && errorBox) errorBox.textContent = error.message; else notify(error.message, true); }
-  finally { if (form.dataset.emailUser) form.elements.email.disabled = false; submit.disabled = !!form.dataset.emailUser && form.elements.email.value.trim().toLowerCase() === form.elements.email.defaultValue; submit.textContent = original; delete form.dataset.busy; }
+  finally { const accountInput = form.dataset.accountUser ? form.elements[form.dataset.accountField] : null; if (accountInput) accountInput.disabled = false; submit.disabled = !!accountInput && accountInput.value.trim().toLowerCase() === accountInput.defaultValue; submit.textContent = original; delete form.dataset.busy; }
 });
-window.addEventListener('beforeunload', (event) => { if (dirty() || state.uploading || state.saving || emailChanges() || emailSaving()) { event.preventDefault(); event.returnValue = ''; } });
+window.addEventListener('beforeunload', (event) => { if (dirty() || state.uploading || state.saving || accountChanges() || accountSaving()) { event.preventDefault(); event.returnValue = ''; } });
 window.addEventListener('offline', () => notify('You are offline. Your draft stays in this tab; reconnect before publishing.', true));
 window.addEventListener('online', () => notify('Connection restored. You can publish your changes.'));
 // Detect another editor's publication without overwriting this tab's draft.
