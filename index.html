@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Cocina Mexicana — Authentic Mexican Cuisine</title>
+  <meta name="description"
+    content="La Cocina Mexicana serves authentic Mexican dishes made with love and tradition. Visit us for tacos, enchiladas, margaritas, and more.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="images/LaCocinaLogo.ico">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-B94WY92Z4F"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-B94WY92Z4F');
+  </script>
+</head>
+
+<body>
+
+  <!-- NAVIGATION -->
+  <nav id="main-nav">
+    <div id="top-banner" class="top-banner">
+      <span>now only accepting <a href="https://enroll.zellepay.com/" target="_blank">Zelle</a> or cash</span>
+      <button id="close-banner" aria-label="Close banner">&times;</button>
+    </div>
+    <div class="nav-container">
+      <a href="#hero" class="nav-logo">
+        <img src="images/LaCocinaLogo.png" alt="La Cocina Mexicana Logo" class="nav-logo-img">
+        La Cocina Mexicana
+      </a>
+      <button id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span class="hamburger"></span>
+      </button>
+      <ul id="nav-menu" class="nav-menu">
+        <li><a href="#about" class="nav-link">About</a></li>
+        <li class="nav-dropdown">
+          <a href="#menu" class="nav-link">Menu <span class="dropdown-arrow">▼</span></a>
+          <ul class="dropdown-menu">
+            <li><a href="#menu-starters" class="dropdown-link">Starters</a></li>
+            <li><a href="#menu-lunch-specials" class="dropdown-link">Lunch Specials</a></li>
+            <li><a href="#menu-entrees" class="dropdown-link">Entrées</a></li>
+            <li><a href="#menu-especialidades" class="dropdown-link">Especialidades</a></li>
+            <li><a href="#menu-childrens-menu" class="dropdown-link">Children's Menu</a></li>
+            <li><a href="#menu-desserts" class="dropdown-link">Desserts</a></li>
+          </ul>
+        </li>
+        <li><a href="#gallery" class="nav-link">Gallery</a></li>
+        <li><a href="#reviews" class="nav-link">Reviews</a></li>
+        <li><a href="#contact" class="nav-link">Visit Us</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero" class="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content fade-in">
+      <p class="hero-tagline">Authentic Mexican Cuisine</p>
+      <h1 class="hero-title">La Cocina<br>Mexicana</h1>
+      <p class="hero-subtitle">Made with love, tradition, and a little bit of fire.</p>
+      <a href="#menu" id="hero-cta" class="btn btn-primary">Explore Our Menu</a>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="section about">
+    <div class="container">
+      <div class="section-header fade-in">
+        <span class="section-label">Our Story</span>
+        <h2>A Taste of Home</h2>
+      </div>
+      <div class="about-content fade-in">
+        <p>At La Cocina Mexicana, every dish tells a story. Rooted in generations of family recipes passed down from the
+          heart of Mexico, our kitchen brings you the bold, authentic flavors of home-cooked Mexican cuisine.</p>
+        <p>We believe in simplicity — fresh ingredients, time-honored techniques, and a whole lot of love. From our
+          hand-pressed tortillas to our slow-simmered salsas, every bite is a celebration of tradition. We are a BYOB establishment, so feel free to bring your favorite drinks to enjoy with your meal!</p>
+        <div class="about-divider">
+          <span class="divider-icon">✦</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MENU -->
+  <section id="menu" class="section menu">
+    <div class="container">
+      <div class="section-header fade-in">
+        <span class="section-label">The Menu</span>
+        <h2>What We Serve</h2>
+      </div>
+
+      <div id="dynamic-menu-container">
+        <p style="text-align: center; color: var(--teal);">Loading menu...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY -->
+  <section id="gallery" class="section gallery">
+    <div class="container">
+      <div class="section-header fade-in">
+        <span class="section-label">Gallery</span>
+        <h2>A Glimpse Inside</h2>
+      </div>
+      <div class="gallery-wrapper">
+        <div class="gallery-grid fade-in" id="gallery-grid">
+          <div class="gallery-item">
+            <img src="images/Gallery/Guac.jpg" alt="Fresh guacamole and chips" loading="lazy">
+          </div>
+          <div class="gallery-item">
+            <img src="images/Gallery/interior.png" alt="Warm and inviting restaurant interior with rustic decor"
+              loading="lazy">
+          </div>
+          <div class="gallery-item">
+            <img src="images/Gallery/BirriaTacos.jpg" alt="Rich and savory birria tacos" loading="lazy">
+          </div>
+          <div class="gallery-item desktop-hidden">
+            <img src="images/Gallery/BirriaTacos2.jpg" alt="Delicious birria tacos" loading="lazy">
+          </div>
+          <div class="gallery-item desktop-hidden">
+            <img src="images/Gallery/Cake.jpg" alt="Delicious dessert cake" loading="lazy">
+          </div>
+          <div class="gallery-item desktop-hidden">
+            <img src="images/Gallery/Empanada.jpg" alt="Freshly baked empanadas" loading="lazy">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVIEWS -->
+  <section id="reviews" class="section reviews">
+    <div class="container">
+      <div class="reviews-layout">
+        <div class="section-header reviews-header fade-in">
+          <span class="section-label">Guest Reviews</span>
+          <h2>What Guests Are Saying</h2>
+          <p class="reviews-intro">Kind words from people who have joined us for a meal.</p>
+        </div>
+
+        <div class="reviews-summary fade-in" aria-live="polite">
+          <div class="reviews-rating-row">
+            <span id="reviews-rating" class="reviews-rating">5.0</span>
+            <div>
+              <span class="reviews-stars" aria-label="5 out of 5 stars">★★★★★</span>
+              <p id="reviews-count" class="reviews-count">Loading guest reviews...</p>
+            </div>
+          </div>
+          <a id="reviews-link" class="reviews-link" href="https://share.google/jdQG4F1zb468JzTCB" target="_blank" rel="noopener">
+            Read more on Google
+          </a>
+        </div>
+      </div>
+
+      <div id="reviews-grid" class="reviews-grid fade-in">
+        <div class="review-card review-card-loading">
+          <div class="review-stars" aria-hidden="true">★★★★★</div>
+          <p class="review-text">Loading 5-star Google reviews...</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT / FOOTER -->
+  <footer id="contact" class="footer">
+    <div class="container">
+      <div class="footer-content fade-in">
+        <div class="footer-brand">
+          <h2 class="footer-logo">La Cocina Mexicana</h2>
+          <p class="footer-tagline">Made with love, tradition,<br>and a little bit of fire.</p>
+        </div>
+        <div class="footer-block">
+          <h3>Find Us</h3>
+          <p>107 W Main Street</p>
+          <p>Kutztown, PA 19530</p>
+          <p><a href="tel:+16106835131">(610) 683-5131</a></p>
+        </div>
+        <div class="footer-block footer-byob">
+          <h3>BYOB</h3>
+          <p>We are proudly BYOB!</p>
+          <p>Bring your favorite beverages.</p>
+        </div>
+        <div class="footer-block">
+          <h3>Hours</h3>
+          <table class="hours-table">
+            <tr>
+              <td>Mon – Thu</td>
+              <td>11:00 AM – 2:00 PM</td>
+              <td>4:00 PM – 8:00 PM</td>
+            </tr>
+            <tr>
+              <td>Fri – Sat</td>
+              <td>11:00 AM – 2:00 PM</td>
+              <td>4:00 PM – 9:00 PM</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 La Cocina Mexicana. All rights reserved.</p>
+        <span class="footer-divider" aria-hidden="true"></span>
+        <p class="footer-credit">Built by <a href="https://truecore.services" target="_blank" rel="noopener">truecore.services</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- LIGHTBOX MODAL -->
+  <div id="lightbox" class="lightbox">
+    <button id="lightbox-close" class="lightbox-close" aria-label="Close gallery">&times;</button>
+    <button id="lightbox-prev" class="lightbox-btn lightbox-prev" aria-label="Previous image">&#10094;</button>
+    <div class="lightbox-content">
+      <img id="lightbox-img" src="" alt="">
+    </div>
+    <button id="lightbox-next" class="lightbox-btn lightbox-next" aria-label="Next image">&#10095;</button>
+  </div>
+
+  <script type="module" src="/script.js"></script>
+</body>
+
+</html>

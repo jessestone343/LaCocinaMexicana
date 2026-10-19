@@ -1,0 +1,598 @@
+{
+  "menu_items": [
+    {
+      "name": "Bean Dip",
+      "description": "Refried beans, spicy green or mild red sauce, sour cream & cheese",
+      "price": "$7",
+      "vegetarian": true,
+      "id": "menu-1",
+      "category": "Starters"
+    },
+    {
+      "name": "Quesadillas (Aperitivo)",
+      "description": "Steak, Chicken, Shrimp or Chorizo served with lettuce & sour cream",
+      "price": "$13",
+      "vegetarian": false,
+      "id": "menu-2",
+      "category": "Starters"
+    },
+    {
+      "name": "Nachos",
+      "description": "Refried beans, cheese, & sour cream",
+      "price": "$7",
+      "vegetarian": true,
+      "id": "menu-3",
+      "category": "Starters"
+    },
+    {
+      "name": "Nachos Supreme",
+      "description": "Steak, Chicken or Chorizo, refried beans, cheese, tomatoes, sour cream & guac",
+      "price": "$12",
+      "vegetarian": false,
+      "id": "menu-4",
+      "category": "Starters"
+    },
+    {
+      "name": "Guacamole Dip",
+      "description": "",
+      "price": "$5",
+      "vegetarian": true,
+      "id": "menu-5",
+      "category": "Starters"
+    },
+    {
+      "name": "Chile Relleno (Aperitivo)",
+      "description": "",
+      "price": "$8",
+      "vegetarian": false,
+      "id": "menu-6",
+      "category": "Starters"
+    },
+    {
+      "name": "Tortilla Soup",
+      "description": "",
+      "price": "$9",
+      "vegetarian": false,
+      "id": "menu-7",
+      "category": "Starters"
+    },
+    {
+      "name": "Tamal (Aperitivo)",
+      "description": "",
+      "price": "$8",
+      "vegetarian": false,
+      "id": "menu-8",
+      "category": "Starters"
+    },
+    {
+      "name": "Chips / Salsa",
+      "description": "",
+      "price": "$2",
+      "vegetarian": false,
+      "id": "menu-9",
+      "category": "Starters"
+    },
+    {
+      "name": "Lunch Special - Monday",
+      "description": "Choice of: #31 Dos Burritos OR #4 La Compuesta OR #5 Dos or Tres Tacos (Steak, Chicken, Pork or Guac). Available 11am - 2pm.",
+      "price": "$11",
+      "vegetarian": false,
+      "id": "menu-10",
+      "category": "Lunch Specials"
+    },
+    {
+      "name": "Lunch Special - Tuesday",
+      "description": "Choice of: #33 Burritos Supremos OR #28 Tres Enchiladas OR #5 Dos or Tres Tacos (Steak, Chicken, Pork or Guac). Available 11am - 2pm.",
+      "price": "$11",
+      "vegetarian": false,
+      "id": "menu-11",
+      "category": "Lunch Specials"
+    },
+    {
+      "name": "Lunch Special - Wednesday",
+      "description": "Choice of: #27 Dos Enchiladas OR #40 Steak Quesadilla OR #5 Dos or Tres Tacos (Steak, Chicken, Pork or Guac). Available 11am - 2pm.",
+      "price": "$11",
+      "vegetarian": false,
+      "id": "menu-12",
+      "category": "Lunch Specials"
+    },
+    {
+      "name": "Lunch Special - Thursday",
+      "description": "Choice of: #40 Pork Quesadilla OR #1 Tostadas OR #5 Dos or Tres Tacos (Steak, Chicken, Pork or Guac). Available 11am - 2pm.",
+      "price": "$11",
+      "vegetarian": false,
+      "id": "menu-13",
+      "category": "Lunch Specials"
+    },
+    {
+      "name": "Lunch Special - Friday",
+      "description": "Choice of: #8 Chimichanga OR #11 Puerco en su salsa OR #5 Dos or Tres Tacos (Steak, Chicken, Pork or Guac). Available 11am - 2pm.",
+      "price": "$11",
+      "vegetarian": false,
+      "id": "menu-14",
+      "category": "Lunch Specials"
+    },
+    {
+      "name": "Fajitas",
+      "description": "A traditional sizzling meal prepared with tomatoes, onions, and bell peppers. Served with rice and beans. Choice of Chicken, Steak, Shrimp or Veggie.",
+      "price": "$18 Single / $35 Double",
+      "vegetarian": true,
+      "id": "menu-15",
+      "category": "Entrées"
+    },
+    {
+      "name": "#1 Tostadas",
+      "description": "Bean, Steak, Chicken, Pork or Guac. Two crispy flat corn tortillas layered with beans, lettuce, tomatoes & cheese or three with no rice/beans. Served with rice and refried beans.",
+      "price": "$14",
+      "vegetarian": true,
+      "id": "menu-16",
+      "category": "Entrées"
+    },
+    {
+      "name": "#2 Tinga Tostadas",
+      "description": "Two crispy flat corn tortillas layered with sour cream, topped with chicken and in chipotle sauce, lettuce & Ranchero Mexican cheese or three with no rice/beans. Served with rice and refried beans.",
+      "price": "$15",
+      "vegetarian": false,
+      "id": "menu-17",
+      "category": "Entrées"
+    },
+    {
+      "name": "#3 Flautas",
+      "description": "Steak, Chicken or Pork. Two crispy rolled tacos served with lettuce, tomatoes, cheese, guac & sour cream or three with no rice/beans. Served with rice and refried beans.",
+      "price": "$15",
+      "vegetarian": false,
+      "id": "menu-18",
+      "category": "Entrées"
+    },
+    {
+      "name": "#4 La Compuesta",
+      "description": "Steak, Chicken, Pork or Beans. Crispy flat flour tortilla layered with refried beans, lettuce, tomatoes, cheese, guac & sour cream. Does not come with a side of rice and beans.",
+      "price": "$14",
+      "vegetarian": true,
+      "id": "menu-19",
+      "category": "Entrées"
+    },
+    {
+      "name": "#5 Tacos (Steak, Chicken, Pork or Guac)",
+      "description": "2 Tacos with lettuce, tomatoes & cheese or cilantro and onion. Or 3 Tacos with no rice or beans. Served with rice and refried beans.",
+      "price": "$13",
+      "vegetarian": false,
+      "id": "menu-20",
+      "category": "Entrées"
+    },
+    {
+      "name": "#5 Tacos (Fish, Shrimp, Chorizo or Al Pastor)",
+      "description": "2 Tacos with cilantro & onion. Or 3 Tacos with no rice or beans. Served with rice and refried beans.",
+      "price": "$15",
+      "vegetarian": false,
+      "id": "menu-21",
+      "category": "Entrées"
+    },
+    {
+      "name": "#6 Tacos Ahogados",
+      "description": "Chicken or Pork. Three crispy tacos drowned in special sauce and topped with lettuce, tomatoes & queso ranchero. Does not come with a side of rice or beans.",
+      "price": "$16",
+      "vegetarian": false,
+      "id": "menu-22",
+      "category": "Entrées"
+    },
+    {
+      "name": "#7 Chiles Rellenos",
+      "description": "Two poblano peppers stuffed with Monterey Jack cheese, fried in egg batter and smothered in spicy green or mild red sauce. Or two Chiles Rellenos no rice & beans for $16. Served with rice and refried beans.",
+      "price": "$20",
+      "vegetarian": true,
+      "id": "menu-23",
+      "category": "Entrées"
+    },
+    {
+      "name": "#8 Chimichanga",
+      "description": "Steak, Chicken, Pork, or Veggie. Deep fried burrito served with guac, sour cream, lettuce, tomato, & cheese. Served with rice and refried beans.",
+      "price": "$17",
+      "vegetarian": true,
+      "id": "menu-24",
+      "category": "Entrées"
+    },
+    {
+      "name": "#9 Mole Poblano",
+      "description": "Chicken smothered in rich red mole. Served with rice and refried beans.",
+      "price": "$18",
+      "vegetarian": false,
+      "id": "menu-25",
+      "category": "Entrées"
+    },
+    {
+      "name": "#10 Sopes",
+      "description": "Steak, Chicken, Pork, Beans or Guac. Two small bowls of soft corn masa layered with beans, lettuce, tomatoes & cheese. Or three with no rice and beans. Served with rice and refried beans.",
+      "price": "$16",
+      "vegetarian": true,
+      "id": "menu-26",
+      "category": "Entrées"
+    },
+    {
+      "name": "#11 Puerco en su salsa",
+      "description": "Tender chunks of lean pork smothered in a spicy green or mild red sauce. Served with rice and refried beans.",
+      "price": "$15",
+      "vegetarian": false,
+      "id": "menu-27",
+      "category": "Entrées"
+    },
+    {
+      "name": "#12 Poblano Azteca",
+      "description": "Two poblano peppers stuffed with chicken and smothered in chipotle sauce, Mexican cream & Mexican cheese ranchero. Served with rice and refried beans.",
+      "price": "$19",
+      "vegetarian": false,
+      "id": "menu-28",
+      "category": "Entrées"
+    },
+    {
+      "name": "#13 Tamales",
+      "description": "Two homestyle pork tamales made with corn masa and smothered in spicy green or mild red sauce. Or two Tamales no rice & beans for $16. Served with rice and refried beans.",
+      "price": "$20",
+      "vegetarian": false,
+      "id": "menu-29",
+      "category": "Entrées"
+    },
+    {
+      "name": "#14 Chilaquiles",
+      "description": "Plain or Chicken. Soft corn tortillas simmered in spicy green or mild red sauce with Mexican cream & queso ranchero. Served with rice and refried beans.",
+      "price": "$17",
+      "vegetarian": false,
+      "id": "menu-30",
+      "category": "Entrées"
+    },
+    {
+      "name": "#27 Two Enchiladas",
+      "description": "Served with rice and beans. Choice of Meat: Steak, Chicken, Pork, Cheese. Choice of Salsa: Verde, Chipotle, Suiza, Roja.",
+      "price": "$15",
+      "vegetarian": true,
+      "id": "menu-31",
+      "category": "Entrées"
+    },
+    {
+      "name": "#28 Three Enchiladas",
+      "description": "Rice and beans not included. Choice of Meat: Steak, Chicken, Pork, Cheese. Choice of Salsa: Verde, Chipotle, Suiza, Roja.",
+      "price": "$14",
+      "vegetarian": true,
+      "id": "menu-32",
+      "category": "Entrées"
+    },
+    {
+      "name": "#30 Vegetarian Burrito",
+      "description": "One burrito made with rice, beans, cheese, sour cream, guac, lettuce, tomatoes & onion. Choice of spicy green or mild red sauce.",
+      "price": "$14",
+      "vegetarian": true,
+      "id": "menu-33",
+      "category": "Entrées"
+    },
+    {
+      "name": "#31 Dos Burritos",
+      "description": "Steak, Chicken, Pork or Beans. Two burritos served with rice, beans, tomatoes & sauce. Choice of spicy green or mild red sauce.",
+      "price": "$16",
+      "vegetarian": true,
+      "id": "menu-34",
+      "category": "Entrées"
+    },
+    {
+      "name": "#32 Burritos Mixtos",
+      "description": "Bean & Steak or Chorizo. Two burritos served with rice & beans, no sauce.",
+      "price": "$15",
+      "vegetarian": false,
+      "id": "menu-35",
+      "category": "Entrées"
+    },
+    {
+      "name": "#33 Burritos Supremos",
+      "description": "Steak, Chicken or Pork. Two burritos made with rice, beans, cheese & sour cream. Choice of spicy green or mild red sauce.",
+      "price": "$17",
+      "vegetarian": false,
+      "id": "menu-36",
+      "category": "Entrées"
+    },
+    {
+      "name": "#34 Chile Relleno Burrito",
+      "description": "One burrito made with one poblano pepper stuffed with Monterey Jack cheese with rice, beans & a spicy green or mild red sauce.",
+      "price": "$17",
+      "vegetarian": true,
+      "id": "menu-37",
+      "category": "Entrées"
+    },
+    {
+      "name": "#35 Tinga Burrito",
+      "description": "One burrito made with chicken smothered in chipotle, lettuce & sour cream. Does not come with choice of sauce.",
+      "price": "$17",
+      "vegetarian": false,
+      "id": "menu-38",
+      "category": "Entrées"
+    },
+    {
+      "name": "#40 Quesadilla - Steak or Chicken",
+      "description": "Made with tomatoes, onions, lettuce, & sour cream. Served with rice & refried beans.",
+      "price": "$18",
+      "vegetarian": false,
+      "id": "menu-39",
+      "category": "Entrées"
+    },
+    {
+      "name": "#40 Quesadilla - Pork",
+      "description": "Chunks of lean pork smothered in sauce, served with sour cream. Served with rice & refried beans.",
+      "price": "$18",
+      "vegetarian": false,
+      "id": "menu-40",
+      "category": "Entrées"
+    },
+    {
+      "name": "#40 Quesadilla - Veggie",
+      "description": "Made with tomatoes, onions, bell peppers, lettuce, & sour cream. Served with rice & refried beans.",
+      "price": "$18",
+      "vegetarian": true,
+      "id": "menu-41",
+      "category": "Entrées"
+    },
+    {
+      "name": "#40 Quesadilla - Chorizo or Shrimp",
+      "description": "Made with cilantro onions, lettuce, & sour cream. Served with rice & refried beans.",
+      "price": "$18",
+      "vegetarian": false,
+      "id": "menu-42",
+      "category": "Entrées"
+    },
+    {
+      "name": "Combo #1",
+      "description": "Chile relleno, cheese enchilada, bean tostada & a taco (steak, chicken, pork or guac). Served with rice, beans & your choice of spicy green or mild red sauce.",
+      "price": "$23",
+      "vegetarian": false,
+      "id": "menu-43",
+      "category": "Entrées"
+    },
+    {
+      "name": "Combo #2",
+      "description": "Chile relleno, cheese enchilada, tamal & a bean and steak burrito. Served with rice, beans & your choice of spicy green or mild red sauce.",
+      "price": "$23",
+      "vegetarian": false,
+      "id": "menu-44",
+      "category": "Entrées"
+    },
+    {
+      "name": "Combo #3",
+      "description": "Chile relleno, cheese enchilada, sope & flauta (steak, chicken, pork or guac) & flauta (steak, chicken, pork). Served with rice, beans & your choice of spicy green or mild red sauce.",
+      "price": "$23",
+      "vegetarian": false,
+      "id": "menu-45",
+      "category": "Entrées"
+    },
+    {
+      "name": "Combo #4",
+      "description": "Chile relleno, cheese enchilada, taco, bean tostada, & steak and bean burrito (steak, chicken, pork or guac, no rice and beans). Served with your choice of spicy green or mild red sauce.",
+      "price": "$23",
+      "vegetarian": false,
+      "id": "menu-46",
+      "category": "Entrées"
+    },
+    {
+      "name": "Combo #5",
+      "description": "Enchilada suiza (chicken or cheese), guac tostada, bean burrito & a taco (steak, chicken, pork or guac). Served with rice, beans & your choice of spicy green or mild red sauce.",
+      "price": "$23",
+      "vegetarian": false,
+      "id": "menu-47",
+      "category": "Entrées"
+    },
+    {
+      "name": "#50 Camarones a la Diabla",
+      "description": "Large shrimp sautéed in a red hot adobo chipotle sauce. Served with rice & beans.",
+      "price": "$19",
+      "vegetarian": false,
+      "id": "menu-48",
+      "category": "Especialidades"
+    },
+    {
+      "name": "#51 Camarones Rancheros",
+      "description": "Large shrimp sautéed with tomatoes, onions, jalapeños, and bell peppers with a spicy green or mild red sauce. Served with rice & beans.",
+      "price": "$19",
+      "vegetarian": false,
+      "id": "menu-49",
+      "category": "Especialidades"
+    },
+    {
+      "name": "#52 Tilapia or Salmon",
+      "description": "Grilled fillet with Mexican seasoning, lime & a dijon mustard & honey infused sauce. Served with rice & beans.",
+      "price": "$19",
+      "vegetarian": false,
+      "id": "menu-50",
+      "category": "Especialidades"
+    },
+    {
+      "name": "#53 Camarones Al Mojo de Ajo",
+      "description": "Large shrimp sautéed in a creamy garlic sauce. Served with rice & beans.",
+      "price": "$19",
+      "vegetarian": false,
+      "id": "menu-51",
+      "category": "Especialidades"
+    },
+    {
+      "name": "#60 Pollo a la Diabla",
+      "description": "Strips of tender chicken breast sautéed in a red hot adobo chipotle sauce. Served with rice & beans.",
+      "price": "$18",
+      "vegetarian": false,
+      "id": "menu-52",
+      "category": "Especialidades"
+    },
+    {
+      "name": "#61 Pollo a la Parrilla",
+      "description": "Moist grilled chicken breast with a spicy green or mild red sauce. Served with rice & beans.",
+      "price": "$18",
+      "vegetarian": false,
+      "id": "menu-53",
+      "category": "Especialidades"
+    },
+    {
+      "name": "#62 Pollo Suizo",
+      "description": "Strips of tender chicken breast sautéed with a mild creamy sauce. Served with rice & beans.",
+      "price": "$18",
+      "vegetarian": false,
+      "id": "menu-54",
+      "category": "Especialidades"
+    },
+    {
+      "name": "#63 Tinga de Pollo",
+      "description": "Chicken breast smothered in adobe chipotle sauce. Served with rice & beans.",
+      "price": "$18",
+      "vegetarian": false,
+      "id": "menu-55",
+      "category": "Especialidades"
+    },
+    {
+      "name": "#70 Bistek a la Mexicana",
+      "description": "Steak sautéed with tomatoes, onions, jalapenos, bell peppers & a mild red sauce. Served with rice & beans.",
+      "price": "$18",
+      "vegetarian": false,
+      "id": "menu-56",
+      "category": "Especialidades"
+    },
+    {
+      "name": "#71 Bistek Ranchero",
+      "description": "Strips of steak sautéed with tomatoes, onions, & bell peppers. Served with rice & beans.",
+      "price": "$18",
+      "vegetarian": false,
+      "id": "menu-57",
+      "category": "Especialidades"
+    },
+    {
+      "name": "Taco",
+      "description": "Steak, Chicken, Pork or Guacamole",
+      "price": "$8",
+      "vegetarian": false,
+      "id": "menu-58",
+      "category": "Children's Menu"
+    },
+    {
+      "name": "Tostada",
+      "description": "Steak, Chicken, Pork, Guacamole or Beans",
+      "price": "$8",
+      "vegetarian": false,
+      "id": "menu-59",
+      "category": "Children's Menu"
+    },
+    {
+      "name": "Flauta",
+      "description": "Steak, Chicken or Pork",
+      "price": "$8",
+      "vegetarian": false,
+      "id": "menu-60",
+      "category": "Children's Menu"
+    },
+    {
+      "name": "Quesadilla",
+      "description": "Chicken, Beef or Cheese",
+      "price": "$8",
+      "vegetarian": false,
+      "id": "menu-61",
+      "category": "Children's Menu"
+    },
+    {
+      "name": "Burrito",
+      "description": "Steak, Chicken, Pork or Beans",
+      "price": "$8",
+      "vegetarian": false,
+      "id": "menu-62",
+      "category": "Children's Menu"
+    },
+    {
+      "name": "Enchilada",
+      "description": "Steak, Chicken, Pork or Cheese",
+      "price": "$8",
+      "vegetarian": false,
+      "id": "menu-63",
+      "category": "Children's Menu"
+    },
+    {
+      "name": "Sope",
+      "description": "Steak, Chicken, Pork, Guacamole or Beans",
+      "price": "$8",
+      "vegetarian": false,
+      "id": "menu-64",
+      "category": "Children's Menu"
+    },
+    {
+      "name": "Nachos",
+      "description": "",
+      "price": "$8",
+      "vegetarian": true,
+      "id": "menu-65",
+      "category": "Children's Menu"
+    },
+    {
+      "name": "Buñuelo",
+      "description": "Crispy flour tortilla with honey, cinnamon sugar & whipped cream.",
+      "price": "$5",
+      "vegetarian": false,
+      "id": "menu-66",
+      "category": "Desserts"
+    },
+    {
+      "name": "Fried Banana",
+      "description": "Deep fried banana with sweet cream, whipped cream, & chocolate syrup.",
+      "price": "$5",
+      "vegetarian": false,
+      "id": "menu-67",
+      "category": "Desserts"
+    },
+    {
+      "name": "Flan",
+      "description": "",
+      "price": "$5",
+      "vegetarian": false,
+      "id": "menu-68",
+      "category": "Desserts"
+    },
+    {
+      "name": "Fried Ice Cream",
+      "description": "Made with toasted coconut.",
+      "price": "$8",
+      "vegetarian": false,
+      "id": "menu-69",
+      "category": "Desserts"
+    },
+    {
+      "name": "Mexican Sundae",
+      "description": "Banana deep fried in a flour tortilla, topped with cajeta, vanilla ice cream, chocolate, honey & cinnamon-sugar.",
+      "price": "$12",
+      "vegetarian": false,
+      "id": "menu-70",
+      "category": "Desserts"
+    }
+  ],
+  "revision": 1,
+  "updated_at": 0,
+  "gallery": [
+    {
+      "id": "gallery-1",
+      "url": "/images/Gallery/Guac.jpg",
+      "alt": "Fresh guacamole and chips"
+    },
+    {
+      "id": "gallery-2",
+      "url": "/images/Gallery/interior.png",
+      "alt": "Warm and inviting restaurant interior with rustic decor"
+    },
+    {
+      "id": "gallery-3",
+      "url": "/images/Gallery/BirriaTacos.jpg",
+      "alt": "Rich and savory birria tacos"
+    },
+    {
+      "id": "gallery-4",
+      "url": "/images/Gallery/BirriaTacos2.jpg",
+      "alt": "Delicious birria tacos"
+    },
+    {
+      "id": "gallery-5",
+      "url": "/images/Gallery/Cake.jpg",
+      "alt": "Delicious dessert cake"
+    },
+    {
+      "id": "gallery-6",
+      "url": "/images/Gallery/Empanada.jpg",
+      "alt": "Freshly baked empanadas"
+    }
+  ]
+}

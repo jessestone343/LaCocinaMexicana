@@ -1,0 +1,27 @@
+PRAGMA journal_mode=WAL;
+PRAGMA foreign_keys=ON;
+CREATE TABLE IF NOT EXISTS users (
+ id INTEGER PRIMARY KEY, username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+ role TEXT NOT NULL CHECK(role IN ('owner','admin')), password_hash TEXT NOT NULL,
+ must_change_password INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS sessions (
+ token_hash TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id),
+ csrf TEXT NOT NULL, expires_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS sessions_user ON sessions(user_id);
+CREATE TABLE IF NOT EXISTS content (
+ id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL,
+ body TEXT NOT NULL, updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS content_history (
+ revision INTEGER PRIMARY KEY, body TEXT NOT NULL,
+ actor_id INTEGER NOT NULL REFERENCES users(id), created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS audit (
+ id INTEGER PRIMARY KEY, actor_id INTEGER NOT NULL REFERENCES users(id),
+ action TEXT NOT NULL, target TEXT NOT NULL, created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS login_attempts (
+ key TEXT PRIMARY KEY, attempts INTEGER NOT NULL, window_start INTEGER NOT NULL
+);

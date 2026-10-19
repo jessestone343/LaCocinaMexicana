@@ -1,0 +1,15 @@
+{
+  "name": "la-cocina-mexicana",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/copy-static.mjs",
+    "preview": "vite preview",
+    "backend": "cargo run --manifest-path backend/Cargo.toml",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "vite": "^8.3.4"
+  }
+}

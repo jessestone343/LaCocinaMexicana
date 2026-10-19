@@ -1,0 +1,25 @@
+services:
+  dashboard:
+    build:
+      context: ..
+    restart: unless-stopped
+    environment:
+      DASHBOARD_ORIGIN: https://dashboard.lacocinamexicana.net
+      BOOTSTRAP_USERNAME: jesse.stone.truecore.services
+      BOOTSTRAP_PASSWORD_FILE: /run/secrets/bootstrap_password
+    secrets:
+      - bootstrap_password
+    volumes:
+      - cocina_data:/data
+    ports:
+      - "127.0.0.1:3000:3000"
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+secrets:
+  bootstrap_password:
+    file: ./secrets/bootstrap_password.txt
+volumes:
+  cocina_data:
