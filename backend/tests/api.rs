@@ -451,8 +451,15 @@ async fn dashboard_entrypoint_cookies_and_expired_sessions_work() {
     let (dir, mut client) = setup().await;
     std::fs::create_dir_all(dir.path().join("dist/dashboard")).unwrap();
     std::fs::write(
-        dir.path().join("dist/dashboard/index.html"),
-        "<!doctype html><title>Business dashboard</title>",
+        dir.path().join("dist/index.html"),
+        "<!doctype html><title>Restaurant website</title>",
+    )
+    .unwrap();
+    let dashboard_html = "<!doctype html><title>Business dashboard</title>";
+    std::fs::write(dir.path().join("dist/dashboard/index.html"), dashboard_html).unwrap();
+    std::fs::write(
+        dir.path().join("dist/dashboard/dashboard.js"),
+        "console.log('dashboard');",
     )
     .unwrap();
     let response = client
@@ -461,26 +468,45 @@ async fn dashboard_entrypoint_cookies_and_expired_sessions_work() {
         .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
         .await
         .unwrap();
-    assert!(response.status().is_redirection());
-    assert_eq!(response.headers()["location"], "/dashboard/");
-    let response = client
-        .router
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri("/dashboard/")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
+    assert!(response.headers().get("location").is_none());
+    assert_eq!(response.headers()["content-type"], "text/html");
     assert_eq!(response.headers()["x-frame-options"], "DENY");
     assert!(
         response.headers()["content-security-policy"]
             .to_str()
             .unwrap()
             .contains("frame-ancestors 'none'")
+    );
+    assert_eq!(
+        response.into_body().collect().await.unwrap().to_bytes(),
+        dashboard_html
+    );
+    for path in ["/dashboard", "/dashboard/"] {
+        let response = client
+            .router
+            .clone()
+            .oneshot(Request::builder().uri(path).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::PERMANENT_REDIRECT);
+        assert_eq!(response.headers()["location"], "/");
+    }
+    let response = client
+        .router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard/dashboard.js")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response.into_body().collect().await.unwrap().to_bytes(),
+        "console.log('dashboard');"
     );
     client.login("jesse.stone.truecore.services", INITIAL).await;
     let db = rusqlite::Connection::open(dir.path().join("cocina.sqlite3")).unwrap();

@@ -57,8 +57,9 @@ In another terminal, run `npm run dev`, then open
 API requests/uploads to Rust on port 3000. Use `localhost` consistently; the
 configured origin must exactly match the address in your browser. To serve the
 production build directly from Rust locally, set `DASHBOARD_ORIGIN` to
-`http://localhost:3000` instead and open port 3000. The Rust root redirects to
-`/dashboard/`. Rust does not load `.env` files; export its settings explicitly.
+`http://localhost:3000` instead and open port 3000. Rust serves the dashboard
+directly at `/`; old `/dashboard` and `/dashboard/` links redirect to `/`.
+Rust does not load `.env` files; export its settings explicitly.
 
 Sign in with **`jesse.stone.truecore.services`**, exactly as requested (a login
 name, not an email address), and the temporary password supplied at first

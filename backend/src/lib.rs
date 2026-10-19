@@ -980,14 +980,12 @@ pub fn app(state: Shared) -> Router {
                 )
             }),
         )
-        .route("/", get(|| async { Redirect::temporary("/dashboard/") }))
+        .route_service("/", ServeFile::new(static_dir.join("dashboard/index.html")))
+        .route("/dashboard", get(|| async { Redirect::permanent("/") }))
+        .route("/dashboard/", get(|| async { Redirect::permanent("/") }))
         .nest_service(
             "/uploads",
             ServeDir::new(state.config.data_dir.join("uploads")),
-        )
-        .nest_service(
-            "/dashboard",
-            ServeDir::new(static_dir.join("dashboard")).append_index_html_on_directories(true),
         )
         .fallback_service(
             ServeDir::new(&static_dir)
