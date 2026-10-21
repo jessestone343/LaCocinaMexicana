@@ -183,14 +183,23 @@ Localhost automatically uses mock review data so the review grid can be reviewed
 
 ## Google reviews
 
-The reviews section uses the Google Places API from the Vercel serverless function at `/api/google-reviews`.
+The reviews section fetches `/api/google-reviews` on the public site. On the
+droplet, this endpoint runs in the same Rust service as the menu/image dashboard,
+using Places API (New). Route this exact path through the public site's reverse
+proxy to the Rust service. The existing `api/google-reviews.js` function is
+retained for sites hosted on Vercel.
 
-Set these environment variables in Vercel:
+Set these runtime environment variables on the Rust service (or in Vercel):
 
-- `GOOGLE_PLACES_API_KEY`: Google Maps Platform API key with Places API enabled.
+- `GOOGLE_PLACES_API_KEY`: Google Maps Platform API key with Places API (New) enabled.
 - `GOOGLE_PLACE_ID`: Place ID for La Cocina Mexicana's Google Business Profile.
 - `GOOGLE_REVIEWS_LIMIT`: Optional number of 5-star reviews to show, from `1` to `5`. Defaults to `3`.
 
 Google's public Places response only returns a small set of place reviews, so the site filters that set down to 5-star reviews before display.
 
-If reviews do not load after deployment, open `/api/google-reviews?debug=1` on the deployed site or add `?reviewsDebug=1` to the page URL. A Google `403` usually means the API key is restricted in a way that blocks server-side requests, billing is not active, or the enabled API does not match the endpoint. This project tries Places API (New) first and then the legacy Place Details endpoint.
+Rust caches successful results for six hours and unavailable results for one
+minute. Concurrent visitors share one refresh, with an eight-second upstream
+timeout. Reviews use the existing five-star filter and the same response format
+as the Vercel function. Credentials stay on the server.
+
+If reviews do not load after deployment, open `/api/google-reviews?debug=1` on the deployed site or add `?reviewsDebug=1` to the page URL. HTML from the endpoint means the reverse proxy is still sending it to the static site. JSON diagnostics report missing configuration or upstream errors. A Google `403` usually means the API key is restricted in a way that blocks server-side requests, billing is not active, or Places API (New) is not enabled. The retained Vercel function also tries the legacy Place Details endpoint; Rust uses Places API (New) only.

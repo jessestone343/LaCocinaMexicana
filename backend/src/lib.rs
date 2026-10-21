@@ -25,6 +25,8 @@ use tower_http::{
     services::{ServeDir, ServeFile},
 };
 
+mod google_reviews;
+
 const SESSION_SECONDS: i64 = 8 * 60 * 60;
 const CATEGORIES: [&str; 6] = [
     "Starters",
@@ -133,6 +135,7 @@ pub struct AppState {
     config: Config,
     hashes: Arc<Semaphore>,
     dummy_hash: String,
+    reviews: google_reviews::Reviews,
 }
 type Shared = Arc<AppState>;
 fn now() -> i64 {
@@ -311,6 +314,7 @@ pub async fn initialize(config: Config) -> Result<Shared, Box<dyn std::error::Er
         config,
         hashes: Arc::new(Semaphore::new(4)),
         dummy_hash,
+        reviews: google_reviews::Reviews::from_env()?,
     }))
 }
 
@@ -1014,6 +1018,7 @@ pub fn app(state: Shared) -> Router {
     let static_dir = state.config.static_dir.clone();
     Router::new()
         .route("/health", get(|| async { Json(json!({"status":"ok"})) }))
+        .route("/api/google-reviews", get(google_reviews::handler))
         .route("/api/auth/login", post(login))
         .route("/api/auth/me", get(me))
         .route("/api/auth/logout", post(logout))
